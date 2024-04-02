@@ -42,3 +42,6 @@ class UserAdmin(BaseUserAdmin):
     )
 
 admin.site.register(models.User, UserAdmin)
+admin.site.register(models.Locale)
+admin.site.register(models.BasicMedia)
+admin.site.register(models.MediaType)
