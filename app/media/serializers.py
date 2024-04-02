@@ -3,6 +3,7 @@ Serializers for the Media API request.
 """
 from rest_framework import serializers
 
+from django.contrib.auth import get_user_model
 from user.serializers import UserSerializer
 from core.models import (
     MediaType,
@@ -22,19 +23,23 @@ class MediaTypeSerializer(serializers.ModelSerializer):
 
 class LocaleSerializer(serializers.ModelSerializer):
     """Serializer for the locale object."""
-    responsible = UserSerializer(many=False, required=False)
+    responsible = serializers.PrimaryKeyRelatedField(many=False,
+                                              queryset=get_user_model().objects.all(),
+                                              required=False)
 
     class Meta:
         model = Locale
         fields = ['id', 'name', 'responsible']
         read_only_field = ['id']
+        extra_kwargs = {"responsible": {"allow_blank": True,
+                                        "allow_null": True},}
 
 
 class BasicMediaSerializer(serializers.ModelSerializer):
     """Serializer for the Basic Media."""
     type = serializers.PrimaryKeyRelatedField(many=False,
-                                              queryset=MediaType.objects.all(),
-                                              required=False)
+                                                queryset=MediaType.objects.all(),
+                                                required=False)
     locale = serializers.PrimaryKeyRelatedField(many=False,
                                                 queryset=Locale.objects.all(),
                                                 required=False)
