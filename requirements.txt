@@ -6,3 +6,5 @@ uritemplate>=3.0.0,<3.1.0
 markdown>3.0.0,<3.1.0
 Pygments>=2.4.0,<2.5.
 Pillow>=10.2.0,<10.3
+uwsgi>=2.0.25.1,<2.1
+psycopg2>=2.9.9,<3.0

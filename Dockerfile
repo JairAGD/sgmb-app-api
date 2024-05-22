@@ -10,37 +10,47 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # the application crashes without emitting any logs due to buffering.
 ENV PYTHONUNBUFFERED=1
 
+# Copy the source code into the container.
+COPY ./app /app
+COPY ./scripts /scripts
+COPY ./requirements.txt /tmp/requirements.txt
+COPY ./requirements.dev.txt /tmp/requirements.dev.txt
+WORKDIR /app
+
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
 # Leverage a bind mount to requirements.txt to avoid having to copy them into
 # into this layer.
 ARG DEV=false
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    --mount=type=bind,source=requirements.dev.txt,target=requirements.dev.txt \
-    python -m venv /py && \
+RUN python -m venv /py && \
+#--mount=type=cache,target=/root/.cache/pip \
+#--mount=type=bind,source=requirements.txt,target=requirements.txt \
+#--mount=type=bind,source=requirements.dev.txt,target=requirements.dev.txt \
     /py/bin/pip install --upgrade pip && \
-#    apk add --update --no-cache postgresql-client && \
-#    apk add --update --no-cache --virtual .tmp-build-deps \
-#        build-base postgresql-dev musl-dev && \
-    /py/bin/pip install -r requirements.txt && \
+    apk add --update --no-cache postgresql-client pcre-dev && \
+    apk add --update --no-cache --virtual .tmp-build-deps \
+        build-base postgresql-dev musl-dev zlib zlib-dev linux-headers && \
+    /py/bin/pip install -r /tmp/requirements.txt && \
     if [ $DEV = "true" ]; \
-        then /py/bin/pip install -r requirements.dev.txt ; \
+        then /py/bin/pip install -r /tmp/requirements.dev.txt ; \
     fi && \
-#    apk del .tmp-build-deps && \
+    apk del .tmp-build-deps && \
     adduser \
         --disabled-password \
         --no-create-home \
-        django-user
+        django-user && \
+    mkdir -p /vol/web/static && \
+    chown -R django-user:django-user /vol && \
+    chmod -R 755 /vol && \
+    chmod -R +x /scripts
+
 
 # Switch to the non-privileged user to run the application.
 USER django-user
 
-ENV PATH="/py/bin:$PATH"
-
-# Copy the source code into the container.
-COPY ./app /app
-WORKDIR /app
+ENV PATH="/scripts:/py/bin:$PATH"
 
 # Expose the port that the application listens on.
 EXPOSE 8000
+
+CMD ["run.sh"]
